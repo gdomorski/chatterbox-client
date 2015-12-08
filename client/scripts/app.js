@@ -7,7 +7,7 @@ $(function(){
     event.preventDefault();
 
     app.send({
-      username:'pokemon',
+      username:'Larry',
       text:$('#message').val(),
       roomname:'lobby'
     });
@@ -16,8 +16,15 @@ $(function(){
 
   $('.update').on('click', function(event){
     event.preventDefault();
-    $('#chats').html('')
     app.fetch();
+  });
+
+  $('#roomSelect').change(function(){
+    app.fetch() 
+  });
+
+  $('#chats').on('click','span', function(){
+    app.addFriend('.' + this.className)
   });
 
 
@@ -50,7 +57,16 @@ $(function(){
         contentType: 'application/json',
         success:function(data){
           data.results.reverse();
-          app.addMessage(data.results);
+
+          var value = $('#roomSelect option:selected').text()
+
+
+          if(value === 'ALL'){
+            app.addMessage(data.results);  
+          } else {
+            app.filterRoom(data);
+          }
+          
         },
         error:function(data){
         }
@@ -60,12 +76,15 @@ $(function(){
       $('#chats').html('')
     },
     addMessage: function(message){
+
+      $('#chats').html('')
       
       _.each(message,function(msg){
         app.addRoom(msg.roomname)
-
-        var ourMessage = '<li class="username">' + app.checkMessage(msg.username) + " : " + app.checkMessage(msg.text) + '</li>'
-        $('#chats').prepend(ourMessage);
+        if(msg.username !== undefined){
+          var ourMessage = $('<li> <span class=' + msg.username.toString() + '>' + app.checkMessage(msg.username) + "</span> : " + app.checkMessage(msg.text) + '</li>').addClass("username").addClass(msg.roomname)
+          $('#chats').prepend(ourMessage);
+        }
       });
 
     },
@@ -76,7 +95,11 @@ $(function(){
       }
 
     },
-    addFriend:function(){
+    addFriend:function(className){
+      $(className).css('font-weight', 'bold');
+      console.log($(className))
+
+
 
     },
     handleSubmit:function(){
@@ -93,6 +116,24 @@ $(function(){
         }
       }
       return message;
+    },
+    filterRoom:function(data){
+ 
+      var value = $('#roomSelect option:selected').text()
+
+      var roomNodes =  _.filter(data.results, function(msg){
+        if(msg.roomname === value){
+          return true;
+        } 
+        return false;
+      });
+
+      $('#chats').html('');
+
+      _.each(roomNodes, function(msg){
+        var ourMessage = $('<li> <span class=' + msg.username.toString() + '>' + app.checkMessage(msg.username) + " : " + app.checkMessage(msg.text) + '</li>').addClass("username").addClass(msg.roomname)
+        $('#chats').prepend(ourMessage);
+      });
     }
 
   };
